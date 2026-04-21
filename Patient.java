@@ -1,17 +1,21 @@
 public class Patient extends Person {
-    private String illness;
+    private String[] conditions;
 
-    public Patient(String name, int age, String illness) {
+    public Patient(String name, int age, String[] conditions) {
         super(name, age);
-        this.illness = illness;
+        this.conditions = conditions;
     }
 
-    public String getIllness() {
-        return illness;
+    public String[] getConditions() {
+        return conditions;
     }
 
     @Override
     public void displayRole() {
-        System.out.println("Role: Patient");
+        System.out.print("Role: Patient | Conditions: ");
+        for (String condition : conditions) {
+            System.out.print(condition + ", ");
+        }
+        System.out.println();
     }
 }

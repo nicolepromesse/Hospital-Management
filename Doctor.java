@@ -12,6 +12,6 @@ public class Doctor extends Person {
 
     @Override
     public void displayRole() {
-        System.out.println("Role: Doctor");
+        System.out.println("Role: Doctor | Specialization: " + specialization);
     }
 }
