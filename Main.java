@@ -9,9 +9,13 @@ public class Main {
         double temp = input.nextDouble();
         input.nextLine();
 
-        if (temp > 40) {
+        if (temp < 0) {
+            System.out.println("Invalid temperature entered.");
+        }
+
+        else if (temp < 30 || temp > 40) {
             System.out.println("STATUS: EMERGENCY");
-            System.out.println("Go to hospital immediately! No appointment allowed.");
+            System.out.println("Go to hospital immediately!");
         }
 
         else if (temp >= 38 && temp <= 40) {
@@ -25,6 +29,9 @@ public class Main {
             int age = input.nextInt();
             input.nextLine();
 
+            System.out.print("Enter illness: ");
+            String illness = input.nextLine();
+
             System.out.print("Enter doctor name: ");
             String doctor = input.nextLine();
 
@@ -34,6 +41,7 @@ public class Main {
             System.out.println("\nAppointment CONFIRMED for:");
             System.out.println("Name: " + name);
             System.out.println("Age: " + age);
+            System.out.println("Illness: " + illness);
             System.out.println("Doctor: " + doctor);
             System.out.println("Date: " + date);
         }
@@ -54,6 +62,9 @@ public class Main {
                 int age = input.nextInt();
                 input.nextLine();
 
+                System.out.print("Enter illness: ");
+                String illness = input.nextLine();
+
                 System.out.print("Enter doctor name: ");
                 String doctor = input.nextLine();
 
@@ -63,6 +74,7 @@ public class Main {
                 System.out.println("\nAppointment BOOKED:");
                 System.out.println("Name: " + name);
                 System.out.println("Age: " + age);
+                System.out.println("Illness: " + illness);
                 System.out.println("Doctor: " + doctor);
                 System.out.println("Date: " + date);
             }
