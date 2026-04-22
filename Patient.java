@@ -1,12 +1,14 @@
-public class Patient extends Person {
-    private String[] conditions;
+import java.util.Set;
 
-    public Patient(String name, int age, String[] conditions) {
+public class Patient extends Person {
+    private Set<String> conditions;
+
+    public Patient(String name, int age, Set<String> conditions) {
         super(name, age);
         this.conditions = conditions;
     }
 
-    public String[] getConditions() {
+    public Set<String> getConditions() {
         return conditions;
     }
 

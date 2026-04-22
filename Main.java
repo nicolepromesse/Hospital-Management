@@ -1,44 +1,80 @@
 import java.util.Scanner;
+import java.util.Set;
+import java.util.HashSet;
 
 public class Main {
 
     static Scanner input = new Scanner(System.in);
     static final double FEE = 300;
+    static AppointmentManager manager = new AppointmentManager();
+  
 
     public static void main(String[] args) {
+        seedData();
 
         try {
-            System.out.println("========================================");
             System.out.println("     MEDICAL APPOINTMENT SYSTEM");
             System.out.println("========================================");
 
-            double temp = readTemperature();
+            System.out.println("1. enter as Patient");
+            System.out.println("2. enter as Doctor");
+            System.out.print("Choose option: ");
+            int role = input.nextInt();
+            input.nextLine();
 
-            if (temp < 30 || temp > 40) {
-                System.out.println("\nSTATUS: EMERGENCY");
-                System.out.println("ACTION: Go to hospital immediately!");
-                return;
-            }
+            if (role == 1) {
 
-            if (temp >= 38 && temp <= 40) {
-                System.out.println("\nSTATUS: WARNING");
-                System.out.println("ACTION: Appointment is REQUIRED.");
-                bookAppointment("REQUIRED");
-                return;
-            }
+                double temp = readTemperature();
 
-            if (temp >= 30 && temp <= 37) {
-                System.out.println("\nSTATUS: NORMAL");
-                System.out.println("ACTION: Appointment is OPTIONAL.");
-
-                System.out.print("Do you want to book appointment? (yes/no): ");
-                String choice = input.nextLine().trim();
-
-                if (choice.equalsIgnoreCase("yes")) {
-                    bookAppointment("OPTIONAL");
-                } else {
-                    System.out.println("No appointment made.");
+                if (temp < 30 || temp > 40) {
+                    System.out.println("\nSTATUS: EMERGENCY");
+                    System.out.println("ACTION: Go to hospital immediately!");
+                    return;
                 }
+
+                if (temp >= 38 && temp <= 40) {
+                    System.out.println("\nSTATUS: WARNING");
+                    System.out.println("ACTION: Appointment is REQUIRED.");
+                    bookAppointment("REQUIRED");
+
+                    manager.showAllAppointments();
+                    manager.showSpecializations();
+                    return;
+                }
+
+                if (temp >= 30 && temp <= 37) {
+                    System.out.println("\nSTATUS: NORMAL");
+                    System.out.println("ACTION: Appointment is OPTIONAL.");
+
+                    System.out.print("Do you want to book appointment? (yes/no): ");
+                    String choice = input.nextLine().trim();
+
+                    if (choice.equalsIgnoreCase("yes")) {
+                        bookAppointment("OPTIONAL");
+
+                        manager.showAllAppointments();
+                        manager.showSpecializations();
+                    } else {
+                        System.out.println("No appointment made.");
+                    }
+                }
+
+            } else if (role == 2) {
+
+                System.out.print("Enter doctor password: ");
+                String password = input.nextLine();
+
+                if (!password.equals("123")) {
+                    System.out.println("ACCESS DENIED! you passaword is incorret");
+                    return;
+                }
+
+                System.out.println("\n========== DOCTOR DASHBOARD ==========");
+                manager.showAllAppointments();
+                manager.showSpecializations();
+
+            } else {
+                System.out.println("Invalid option");
             }
 
         } catch (Exception e) {
@@ -58,13 +94,13 @@ public class Main {
         int count = readAge("How many conditions do you have? ");
 
         if (count <= 0) {
-            throw new InvalidAppointmentException("Conditions cannot be 0 or negative.");
+            throw new RuntimeException("Conditions cannot be 0 or negative.");
         }
 
-        String[] conditions = new String[count];
+        Set<String> conditions = new HashSet<>();
 
         for (int i = 0; i < count; i++) {
-            conditions[i] = readNonEmpty("Enter condition " + (i + 1) + ": ");
+            conditions.add(readNonEmpty("Enter condition " + (i + 1) + ": "));
         }
 
         System.out.println("\n--- Doctor Information ---");
@@ -75,7 +111,7 @@ public class Main {
         String date = readNonEmpty("Enter appointment date: ");
 
         if (date.length() < 5) {
-            throw new InvalidAppointmentException("Invalid appointment date.");
+            throw new RuntimeException("Invalid appointment date.");
         }
 
         double payment = readPayment("Enter payment (Fee = 300): ");
@@ -86,7 +122,8 @@ public class Main {
         Doctor doctor = new Doctor(doctorName, 35, specialization);
 
         Appointment appointment = new Appointment(doctor, patient, date, finalStatus, payment);
-        appointment.showInfo();
+
+        manager.addAppointment(appointment);
     }
 
     static double readTemperature() {
@@ -96,19 +133,19 @@ public class Main {
 
                 if (!input.hasNextDouble()) {
                     input.nextLine();
-                    throw new InvalidTemperatureException("Temperature must be a number.");
+                    throw new RuntimeException("Temperature must be a number.");
                 }
 
                 double temp = input.nextDouble();
                 input.nextLine();
 
                 if (temp < 0) {
-                    throw new InvalidTemperatureException("Temperature cannot be negative.");
+                    throw new RuntimeException("Temperature cannot be negative.");
                 }
 
                 return temp;
 
-            } catch (InvalidTemperatureException e) {
+            } catch (RuntimeException e) {
                 System.out.println("ERROR: " + e.getMessage());
             }
         }
@@ -116,19 +153,14 @@ public class Main {
 
     static String readNonEmpty(String prompt) {
         while (true) {
-            try {
-                System.out.print(prompt);
-                String value = input.nextLine().trim();
+            System.out.print(prompt);
+            String value = input.nextLine().trim();
 
-                if (value.isEmpty()) {
-                    throw new EmptyFieldException("Field cannot be empty.");
-                }
-
+            if (!value.isEmpty()) {
                 return value;
-
-            } catch (EmptyFieldException e) {
-                System.out.println("ERROR: " + e.getMessage());
             }
+
+            System.out.println("ERROR: Field cannot be empty.");
         }
     }
 
@@ -139,19 +171,19 @@ public class Main {
 
                 if (!input.hasNextInt()) {
                     input.nextLine();
-                    throw new InvalidAgeException("Must be a number.");
+                    throw new RuntimeException("Must be a number.");
                 }
 
                 int age = input.nextInt();
                 input.nextLine();
 
                 if (age <= 0 || age > 120) {
-                    throw new InvalidAgeException("Age must be 1 to 120.");
+                    throw new RuntimeException("Invalid age range.");
                 }
 
                 return age;
 
-            } catch (InvalidAgeException e) {
+            } catch (RuntimeException e) {
                 System.out.println("ERROR: " + e.getMessage());
             }
         }
@@ -200,4 +232,27 @@ public class Main {
 
         return "PENDING";
     }
+
+    static void seedData() {
+
+    Set<String> c1 = new HashSet<>();
+    c1.add("fever");
+
+    Set<String> c2 = new HashSet<>();
+    c2.add("cold");
+
+    Set<String> c3 = new HashSet<>();
+    c3.add("headache");
+
+    Patient p1 = new Patient("Alice", 25, c1);
+    Patient p2 = new Patient("Bob", 30, c2);
+    Patient p3 = new Patient("John", 40, c3);
+
+    Doctor d1 = new Doctor("Dr Smith", 45, "Cardiology");
+    Doctor d2 = new Doctor("Dr Jane", 38, "Dermatology");
+
+    manager.addAppointment(new Appointment(d1, p1, "10/02", "CONFIRMED", 300));
+    manager.addAppointment(new Appointment(d2, p2, "11/02", "PENDING", 200));
+    manager.addAppointment(new Appointment(d1, p3, "12/02", "CONFIRMED", 300));
+}
 }

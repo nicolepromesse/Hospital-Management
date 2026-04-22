@@ -18,9 +18,31 @@ public class Appointment {
         this.payment = payment;
     }
 
-    public void showInfo() {
+    public int getId() {
+        return id;
+    }
 
-        System.out.println("\n========================================");
+    public Doctor getDoctor() {
+        return doctor;
+    }
+
+    public Patient getPatient() {
+        return patient;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public double getPayment() {
+        return payment;
+    }
+
+    public void showInfo() {
         System.out.println("        APPOINTMENT RECEIPT");
         System.out.println("========================================");
 
@@ -36,11 +58,12 @@ public class Appointment {
         System.out.println("\nDoctor: " + doctor.getName());
         System.out.println("Specialization: " + doctor.getSpecialization());
         System.out.println("Payment: " + payment);
+
         if (status.trim().equalsIgnoreCase("PENDING") || status.trim().equalsIgnoreCase("CANCELLED")) {
-    System.out.println("Status: " + status + " (INSUFFICIENT AMOUNT)");
-} else {
-    System.out.println("Status: " + status);
-}
+            System.out.println("Status: " + status + " (INSUFFICIENT AMOUNT)");
+        } else {
+            System.out.println("Status: " + status);
+        }
 
         System.out.println("========================================\n");
     }
