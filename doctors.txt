@@ -1,0 +1,3 @@
+kamanzi,123,generol
+kalenzi,14,teminology
+karnzi,123,generol

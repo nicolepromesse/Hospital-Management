@@ -1,258 +1,245 @@
-import java.util.Scanner;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Main {
 
     static Scanner input = new Scanner(System.in);
-    static final double FEE = 300;
-    static AppointmentManager manager = new AppointmentManager();
-  
+
+    static UserManager userManager = new UserManager();
+    static AppointmentManager appointmentManager = new AppointmentManager();
 
     public static void main(String[] args) {
-        seedData();
+
+        userManager.loadDoctors();
+        userManager.loadPatients();
+        appointmentManager.loadAppointments(userManager);
+
+        while (true) {
+
+            System.out.println("\n===== MEDICAL APPOINTMENT SYSTEM =====");
+            System.out.println("1. Register Doctor");
+            System.out.println("2. Register Patient");
+            System.out.println("3. Patient Login & Book Appointment");
+            System.out.println("4. Doctor Login (View Appointments)");
+            System.out.println("5. View All Appointments");
+            System.out.println("6. Cancel Appointment");
+            System.out.println("7. Exit");
+
+            System.out.print("Choose option: ");
+
+            try {
+                int choice = input.nextInt();
+                input.nextLine();
+
+                switch (choice) {
+                    case 1 -> registerDoctor();
+                    case 2 -> registerPatient();
+                    case 3 -> patientFlow();
+                    case 4 -> doctorFlow();
+                    case 5 -> appointmentManager.showAllAppointments();
+                    case 6 -> cancelAppointmentFlow();
+                    case 7 -> {
+                        System.out.println("System closed.");
+                        return;
+                    }
+                    default -> System.out.println("Invalid option!");
+                }
+
+            } catch (Exception e) {
+                System.out.println("Invalid input!");
+                input.nextLine();
+            }
+        }
+    }
+
+    static boolean isEmpty(String v) {
+        return v == null || v.trim().isEmpty();
+    }
+
+    static void registerDoctor() {
+
+    String name;
+
+    while (true) {
+        System.out.print("Doctor name: ");
+        name = input.nextLine();
+        if (name.trim().isEmpty()) {
+            System.out.println("Name is required.");
+        } else {
+            break;
+        }
+    }
+
+    String password;
+
+    while (true) {
+        System.out.print("Password: ");
+        password = input.nextLine();
+        if (password.trim().isEmpty()) {
+            System.out.println("Password is required.");
+        } else {
+            break;
+        }
+    }
+
+    String specialization;
+
+    while (true) {
+        System.out.print("Specialization: ");
+        specialization = input.nextLine();
+        if (specialization.trim().isEmpty()) {
+            System.out.println("Specialization is required.");
+        } else {
+            break;
+        }
+    }
+
+    Doctor d = new Doctor(name, password, specialization);
+    userManager.registerDoctor(d);
+}
+
+   static void registerPatient() {
+
+    String name;
+
+    while (true) {
+        System.out.print("Patient name: ");
+        name = input.nextLine();
+        if (name.trim().isEmpty()) {
+            System.out.println("Name is required.");
+        } else {
+            break;
+        }
+    }
+
+    String password;
+
+    while (true) {
+        System.out.print("Password: ");
+        password = input.nextLine();
+        if (password.trim().isEmpty()) {
+            System.out.println("Password is required.");
+        } else {
+            break;
+        }
+    }
+
+    Set<String> conditions = new HashSet<>();
+
+    Patient p = new Patient(name, password, conditions);
+    userManager.registerPatient(p);
+}
+
+    static void patientFlow() {
+
+        System.out.print("Name: ");
+        String name = input.nextLine();
+
+        System.out.print("Password: ");
+        String password = input.nextLine();
+
+        if (isEmpty(name) || isEmpty(password)) {
+            System.out.println("Name and password are required.");
+            return;
+        }
+
+        Patient p = userManager.loginPatient(name, password);
+
+        if (p == null) {
+            System.out.println("Name or password is incorrect.");
+            return;
+        }
+
+        if (userManager.getDoctors().isEmpty()) {
+            System.out.println("No doctors available.");
+            return;
+        }
+
+        System.out.println("\nAvailable Doctors:");
+        List<Doctor> doctors = userManager.getDoctors();
+
+        for (int i = 0; i < doctors.size(); i++) {
+            System.out.println((i + 1) + ". " +
+                    doctors.get(i).getName() + " - " +
+                    doctors.get(i).getSpecialization());
+        }
 
         try {
-            System.out.println("     MEDICAL APPOINTMENT SYSTEM");
-            System.out.println("========================================");
-
-            System.out.println("1. enter as Patient");
-            System.out.println("2. enter as Doctor");
-            System.out.print("Choose option: ");
-            int role = input.nextInt();
+            System.out.print("Choose doctor: ");
+            int index = input.nextInt();
             input.nextLine();
 
-            if (role == 1) {
+            Doctor d = doctors.get(index - 1);
 
-                double temp = readTemperature();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
-                if (temp < 30 || temp > 40) {
-                    System.out.println("\nSTATUS: EMERGENCY");
-                    System.out.println("ACTION: Go to hospital immediately!");
-                    return;
-                }
+            System.out.print("Enter date (dd-MM-yyyy HH:mm): ");
+            String inputDate = input.nextLine();
 
-                if (temp >= 38 && temp <= 40) {
-                    System.out.println("\nSTATUS: WARNING");
-                    System.out.println("ACTION: Appointment is REQUIRED.");
-                    bookAppointment("REQUIRED");
+            LocalDateTime date = LocalDateTime.parse(inputDate, formatter);
 
-                    manager.showAllAppointments();
-                    manager.showSpecializations();
-                    return;
-                }
-
-                if (temp >= 30 && temp <= 37) {
-                    System.out.println("\nSTATUS: NORMAL");
-                    System.out.println("ACTION: Appointment is OPTIONAL.");
-
-                    System.out.print("Do you want to book appointment? (yes/no): ");
-                    String choice = input.nextLine().trim();
-
-                    if (choice.equalsIgnoreCase("yes")) {
-                        bookAppointment("OPTIONAL");
-
-                        manager.showAllAppointments();
-                        manager.showSpecializations();
-                    } else {
-                        System.out.println("No appointment made.");
-                    }
-                }
-
-            } else if (role == 2) {
-
-                System.out.print("Enter doctor password: ");
-                String password = input.nextLine();
-
-                if (!password.equals("123")) {
-                    System.out.println("ACCESS DENIED! you passaword is incorret");
-                    return;
-                }
-
-                System.out.println("\n========== DOCTOR DASHBOARD ==========");
-                manager.showAllAppointments();
-                manager.showSpecializations();
-
-            } else {
-                System.out.println("Invalid option");
+            if (date.isBefore(LocalDateTime.now())) {
+                System.out.println("You cannot book an appointment in the past.");
+                return;
             }
 
+            if (!appointmentManager.isDoctorAvailable(d, date)) {
+                System.out.println("Doctor not available at this time.");
+                return;
+            }
+
+            Appointment a = new Appointment(d, p, date, "CONFIRMED");
+            appointmentManager.addAppointment(a);
+
+            System.out.println("Appointment booked successfully!");
+            a.showInfo();
+
+        } catch (java.time.format.DateTimeParseException e) {
+            System.out.println("Invalid date format. Use dd-MM-yyyy HH:mm");
         } catch (Exception e) {
-            System.out.println("SYSTEM ERROR: " + e.getMessage());
-        } finally {
-            input.close();
-            System.out.println("\nSystem closed safely.");
+            System.out.println("Booking error!");
+            input.nextLine();
         }
     }
 
-    static void bookAppointment(String status) {
+    static void doctorFlow() {
 
-        System.out.println("\n--- Patient Information ---");
-        String patientName = readNonEmpty("Enter patient name: ");
-        int age = readAge("Enter age: ");
+        System.out.print("Doctor name: ");
+        String name = input.nextLine();
 
-        int count = readAge("How many conditions do you have? ");
+        System.out.print("Password: ");
+        String password = input.nextLine();
 
-        if (count <= 0) {
-            throw new RuntimeException("Conditions cannot be 0 or negative.");
+        if (isEmpty(name) || isEmpty(password)) {
+            System.out.println("Name and password are required.");
+            return;
         }
 
-        Set<String> conditions = new HashSet<>();
+        Doctor d = userManager.loginDoctor(name, password);
 
-        for (int i = 0; i < count; i++) {
-            conditions.add(readNonEmpty("Enter condition " + (i + 1) + ": "));
+        if (d == null) {
+            System.out.println("Doctor name or password is incorrect.");
+            return;
         }
 
-        System.out.println("\n--- Doctor Information ---");
-        String doctorName = readNonEmpty("Enter doctor name: ");
-        String specialization = readNonEmpty("Enter specialization: ");
-
-        System.out.println("\n--- Schedule ---");
-        String date = readNonEmpty("Enter appointment date: ");
-
-        if (date.length() < 5) {
-            throw new RuntimeException("Invalid appointment date.");
-        }
-
-        double payment = readPayment("Enter payment (Fee = 300): ");
-
-        String finalStatus = evaluateStatus(count, payment);
-
-        Patient patient = new Patient(patientName, age, conditions);
-        Doctor doctor = new Doctor(doctorName, 35, specialization);
-
-        Appointment appointment = new Appointment(doctor, patient, date, finalStatus, payment);
-
-        manager.addAppointment(appointment);
+        System.out.println("Welcome Dr. " + d.getName());
+        appointmentManager.showAllAppointments();
     }
 
-    static double readTemperature() {
-        while (true) {
-            try {
-                System.out.print("\nEnter patient temperature (°C): ");
+    static void cancelAppointmentFlow() {
 
-                if (!input.hasNextDouble()) {
-                    input.nextLine();
-                    throw new RuntimeException("Temperature must be a number.");
-                }
+        System.out.print("Patient name: ");
+        String name = input.nextLine();
 
-                double temp = input.nextDouble();
-                input.nextLine();
+        System.out.print("Password: ");
+        String password = input.nextLine();
 
-                if (temp < 0) {
-                    throw new RuntimeException("Temperature cannot be negative.");
-                }
-
-                return temp;
-
-            } catch (RuntimeException e) {
-                System.out.println("ERROR: " + e.getMessage());
-            }
+        if (isEmpty(name) || isEmpty(password)) {
+            System.out.println("Name and password are required.");
+            return;
         }
+
+        appointmentManager.cancelAppointment(name, password, userManager);
     }
-
-    static String readNonEmpty(String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            String value = input.nextLine().trim();
-
-            if (!value.isEmpty()) {
-                return value;
-            }
-
-            System.out.println("ERROR: Field cannot be empty.");
-        }
-    }
-
-    static int readAge(String prompt) {
-        while (true) {
-            try {
-                System.out.print(prompt);
-
-                if (!input.hasNextInt()) {
-                    input.nextLine();
-                    throw new RuntimeException("Must be a number.");
-                }
-
-                int age = input.nextInt();
-                input.nextLine();
-
-                if (age <= 0 || age > 120) {
-                    throw new RuntimeException("Invalid age range.");
-                }
-
-                return age;
-
-            } catch (RuntimeException e) {
-                System.out.println("ERROR: " + e.getMessage());
-            }
-        }
-    }
-
-    static double readPayment(String prompt) {
-        while (true) {
-            try {
-                System.out.print(prompt);
-
-                if (!input.hasNextDouble()) {
-                    input.nextLine();
-                    throw new RuntimeException("Payment must be a number.");
-                }
-
-                double p = input.nextDouble();
-                input.nextLine();
-
-                if (p < 0) {
-                    throw new RuntimeException("Invalid payment.");
-                }
-
-                return p;
-
-            } catch (RuntimeException e) {
-                System.out.println("ERROR: " + e.getMessage());
-            }
-        }
-    }
-
-    static String evaluateStatus(int count, double payment) {
-
-        if (count >= 4) {
-            return "HIGH RISK - EMERGENCY";
-        }
-
-        boolean fullPayment = payment >= FEE;
-
-        if (count == 1) {
-            return fullPayment ? "CONFIRMED" : "CANCELLED";
-        }
-
-        if (count == 2 || count == 3) {
-            return fullPayment ? "CONFIRMED" : "PENDING";
-        }
-
-        return "PENDING";
-    }
-
-    static void seedData() {
-
-    Set<String> c1 = new HashSet<>();
-    c1.add("fever");
-
-    Set<String> c2 = new HashSet<>();
-    c2.add("cold");
-
-    Set<String> c3 = new HashSet<>();
-    c3.add("headache");
-
-    Patient p1 = new Patient("Alice", 25, c1);
-    Patient p2 = new Patient("Bob", 30, c2);
-    Patient p3 = new Patient("John", 40, c3);
-
-    Doctor d1 = new Doctor("Dr Smith", 45, "Cardiology");
-    Doctor d2 = new Doctor("Dr Jane", 38, "Dermatology");
-
-    manager.addAppointment(new Appointment(d1, p1, "10/02", "CONFIRMED", 300));
-    manager.addAppointment(new Appointment(d2, p2, "11/02", "PENDING", 200));
-    manager.addAppointment(new Appointment(d1, p3, "12/02", "CONFIRMED", 300));
-}
 }

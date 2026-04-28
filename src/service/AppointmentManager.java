@@ -1,75 +1,112 @@
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class AppointmentManager {
 
-    private List<Appointment> appointments;
-    private Set<String> specializations;
-    private Map<String, Appointment> appointmentMap;
+    private List<Appointment> appointments = new ArrayList<>();
 
-    public AppointmentManager() {
-        appointments = new ArrayList<>();
-        specializations = new HashSet<>();
-        appointmentMap = new HashMap<>();
+    public void addAppointment(Appointment a) {
+        appointments.add(a);
+        saveAppointments();
     }
 
-    public void addAppointment(Appointment appointment) {
-        appointments.add(appointment);
-        specializations.add(appointment.getDoctor().getSpecialization());
-        appointmentMap.put(appointment.getPatient().getName(), appointment);
+    public boolean isDoctorAvailable(Doctor doctor, LocalDateTime newDate) {
+        for (Appointment a : appointments) {
+            if (a.getDoctor().getName().equals(doctor.getName())) {
+                LocalDateTime existing = a.getDate();
+                LocalDateTime end = existing.plusMinutes(90);
+                if (!newDate.isAfter(end) && !newDate.isBefore(existing)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public void showAllAppointments() {
-
         if (appointments.isEmpty()) {
             System.out.println("No appointments available.");
             return;
         }
-
         for (Appointment a : appointments) {
-
-            System.out.println("\n==============================");
-            System.out.println("ID: " + a.getId());
-            System.out.println("Patient: " + a.getPatient().getName());
-            System.out.println("Age: " + a.getPatient().getAge());
-            System.out.println("Conditions: " + a.getPatient().getConditions());
-            System.out.println("Doctor: " + a.getDoctor().getName());
-            System.out.println("Specialization: " + a.getDoctor().getSpecialization());
-            System.out.println("Date: " + a.getDate());
-            System.out.println("Payment: " + a.getPayment());
-            System.out.println("Status: " + a.getStatus());
-            System.out.println("==============================");
-        }
-    }
-
-    public void findAppointmentByPatient(String name) {
-        Appointment a = appointmentMap.get(name);
-        if (a != null) {
             a.showInfo();
-        } else {
-            System.out.println("No appointment found for " + name);
         }
     }
 
-    public void removeAppointment(String name) {
-        Appointment a = appointmentMap.remove(name);
-        if (a != null) {
-            appointments.remove(a);
-            System.out.println("Appointment removed.");
-        } else {
-            System.out.println("No appointment to remove.");
-        }
-    }
+    public void cancelAppointment(String name, String password, UserManager userManager) {
 
-    public void showSpecializations() {
+        Patient p = userManager.loginPatient(name, password);
 
-        if (specializations.isEmpty()) {
-            System.out.println("No specializations available.");
+        if (p == null) {
+            System.out.println("Invalid patient credentials.");
             return;
         }
 
-        System.out.println("\nDoctor Specializations:");
-        for (String s : specializations) {
-            System.out.println("- " + s);
+        boolean found = false;
+
+        for (Appointment a : appointments) {
+            if (a.getPatient().getName().equals(name)) {
+                a.setStatus("CANCELLED");
+                found = true;
+            }
+        }
+
+        if (!found) {
+            System.out.println("No appointment found.");
+            return;
+        }
+
+        saveAppointments();
+        System.out.println("Appointment cancelled successfully.");
+    }
+
+    public void saveAppointments() {
+        List<String> lines = new ArrayList<>();
+        for (Appointment a : appointments) {
+            lines.add(
+                a.getId() + "," +
+                a.getDoctor().getName() + "," +
+                a.getPatient().getName() + "," +
+                a.getDate().toString() + "," +
+                a.getStatus()
+            );
+        }
+        FileUtil.writeLines("appointments.txt", lines);
+    }
+
+    public void loadAppointments(UserManager userManager) {
+
+        List<String> lines = FileUtil.readLines("appointments.txt");
+
+        for (String line : lines) {
+
+            String[] p = line.split(",");
+
+            String doctorName = p[1];
+            String patientName = p[2];
+
+            Doctor doctor = null;
+            Patient patient = null;
+
+            for (Doctor d : userManager.getDoctors()) {
+                if (d.getName().equals(doctorName)) doctor = d;
+            }
+
+            for (String pl : FileUtil.readLines("patients.txt")) {
+                String[] data = pl.split(",");
+                if (data[0].equals(patientName)) {
+                    patient = new Patient(data[0], data[1], new HashSet<>());
+                }
+            }
+
+            if (doctor != null && patient != null) {
+                appointments.add(new Appointment(
+                        doctor,
+                        patient,
+                        LocalDateTime.parse(p[3]),
+                        p[4]
+                ));
+            }
         }
     }
 }

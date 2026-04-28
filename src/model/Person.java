@@ -1,14 +1,20 @@
 public abstract class Person {
-    private String name;
-    private int age;
 
-    public Person(String name, int age) {
+    protected String name;
+    protected String password;
+
+    public Person(String name, String password) {
         this.name = name;
-        this.age = age;
+        this.password = password;
     }
 
-    public String getName() { return name; }
-    public int getAge() { return age; }
+    public String getName() {
+        return name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 
     public abstract void displayRole();
 }

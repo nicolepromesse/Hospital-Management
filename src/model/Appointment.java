@@ -1,3 +1,6 @@
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class Appointment {
 
     private static int counter = 1000;
@@ -5,17 +8,15 @@ public class Appointment {
 
     private Doctor doctor;
     private Patient patient;
-    private String date;
+    private LocalDateTime date;
     private String status;
-    private double payment;
 
-    public Appointment(Doctor doctor, Patient patient, String date, String status, double payment) {
+    public Appointment(Doctor doctor, Patient patient, LocalDateTime date, String status) {
         this.id = counter++;
         this.doctor = doctor;
         this.patient = patient;
         this.date = date;
         this.status = status;
-        this.payment = payment;
     }
 
     public int getId() {
@@ -30,7 +31,7 @@ public class Appointment {
         return patient;
     }
 
-    public String getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
@@ -38,29 +39,28 @@ public class Appointment {
         return status;
     }
 
-    public double getPayment() {
-        return payment;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public void showInfo() {
-        System.out.println("        APPOINTMENT RECEIPT");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
+        System.out.println("\n        APPOINTMENT RECEIPT");
         System.out.println("========================================");
 
         System.out.println("ID: " + id);
         System.out.println("Patient: " + patient.getName());
-        System.out.println("Age: " + patient.getAge());
-
-        System.out.print("Conditions: ");
-        for (String c : patient.getConditions()) {
-            System.out.print(c + " ");
-        }
-
-        System.out.println("\nDoctor: " + doctor.getName());
+        System.out.println("Doctor: " + doctor.getName());
         System.out.println("Specialization: " + doctor.getSpecialization());
-        System.out.println("Payment: " + payment);
+        System.out.println("Date: " + date.format(formatter));
 
-        if (status.trim().equalsIgnoreCase("PENDING") || status.trim().equalsIgnoreCase("CANCELLED")) {
-            System.out.println("Status: " + status + " (INSUFFICIENT AMOUNT)");
+        if (status == null || status.trim().isEmpty()) {
+            System.out.println("Status: UNKNOWN");
+        } else if (status.equalsIgnoreCase("PENDING") ||
+                   status.equalsIgnoreCase("CANCELLED")) {
+            System.out.println("Status: " + status + " (NOT CONFIRMED)");
         } else {
             System.out.println("Status: " + status);
         }
