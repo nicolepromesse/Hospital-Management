@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.hospitol.controller.DoctorDashboardController"
+      alignment="TOP_CENTER" spacing="16"
+      style="-fx-padding: 24; -fx-background-color: #f0f4f8;">
+
+    <!-- Title -->
+    <Label text="🩺 Doctor Dashboard"
+           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1a3a5c;"/>
+
+    <Separator/>
+
+    <!-- Doctor Filter + Logout -->
+    <HBox spacing="12" alignment="CENTER">
+        <VBox spacing="4">
+            <Label text="Filter by Doctor" style="-fx-font-size: 12px; -fx-text-fill: #555;"/>
+            <ComboBox fx:id="doctorFilterCombo"
+                      promptText="Select Doctor"
+                      prefWidth="200"
+                      style="-fx-background-radius: 8; -fx-border-radius: 8;
+                             -fx-border-color: #bdc3c7; -fx-padding: 7 10 7 10;"/>
+        </VBox>
+        <Button fx:id="logoutBtn" text="🚪 Logout"
+                onAction="#logout"
+                style="-fx-background-color: #34495e; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18 8 18;"/>
+    </HBox>
+
+    <!-- Action Buttons -->
+    <HBox spacing="12" alignment="CENTER">
+        <Button text="✅ Mark Done"
+                onAction="#markDone"
+                style="-fx-background-color: #27ae60; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18 8 18;"/>
+        <Button text="🗑 Delete Appointment"
+                onAction="#deleteAppointment"
+                style="-fx-background-color: #e74c3c; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18 8 18;"/>
+        <Button text="🔄 Refresh"
+                onAction="#refreshTable"
+                style="-fx-background-color: #2980b9; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 18 8 18;"/>
+    </HBox>
+
+    <!-- Status message -->
+    <Label fx:id="statusLabel" text=""
+           style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+    <!-- Appointments Table -->
+    <TableView fx:id="doctorAppointmentsTable"
+               prefHeight="320" prefWidth="700"
+               style="-fx-background-radius: 10;">
+        <columns>
+            <TableColumn fx:id="patientColumn" text="Patient"  prefWidth="160"/>
+            <TableColumn fx:id="dateColumn"    text="Date"     prefWidth="130"/>
+            <TableColumn fx:id="timeColumn"    text="Time"     prefWidth="100"/>
+            <TableColumn fx:id="statusColumn"  text="Status"   prefWidth="120"/>
+        </columns>
+        <placeholder>
+            <Label text="No appointments found." style="-fx-text-fill: #999;"/>
+        </placeholder>
+    </TableView>
+
+</VBox>

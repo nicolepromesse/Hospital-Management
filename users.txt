@@ -1,0 +1,6 @@
+doctor|Doctor@123|Doctor|doctor@Hospital.com
+Hpicole|nicole@12|Doctor|nicoleg@gmail.com
+Hnicole|nicole@123|Patient|nicole@gmail.com
+nicolepromesse|nicole@12|Patient|nicole@gmail.com
+patient|Patient@123|Patient|patient@Hospital.com
+kamanzi|manzi@123|Doctor|kamanzi@gamil.com
