@@ -6,13 +6,14 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.example.hospitol.model.Appointment;
-import org.example.hospitol.model.Doctor;
 import org.example.hospitol.service.AppointmentManager;
-import org.example.hospitol.service.ClinicService;
+import org.example.hospitol.service.ClinicalRecordStore;
 
 import java.io.IOException;
+import java.util.List;
 
 public class PatientDashboardController {
 
@@ -27,12 +28,11 @@ public class PatientDashboardController {
     @FXML private TextField timeField;
     @FXML private Label statusLabel;
 
-    @FXML private Button viewAppointmentsBtn;
-    @FXML private Button viewRecordsBtn;
-    @FXML private Button logoutBtn;
+    @FXML private VBox recordsSection;
+    @FXML private ListView<String> recordsListView;
 
     private final AppointmentManager manager = new AppointmentManager();
-    private final ClinicService clinicService = new ClinicService();
+    private final ClinicalRecordStore recordStore = ClinicalRecordStore.getInstance();
     private final ObservableList<Appointment> appointments = FXCollections.observableArrayList();
 
     private String currentPatientName = "Patient";
@@ -44,18 +44,23 @@ public class PatientDashboardController {
         timeColumn.setCellValueFactory(data -> data.getValue().timeProperty());
         statusColumn.setCellValueFactory(data -> data.getValue().statusProperty());
 
-        // Load doctors directly from ClinicService
-        doctorComboBox.setItems(FXCollections.observableArrayList(
-                clinicService.getAllDoctors().stream().map(Doctor::getName).toList()
-        ));
-
-        loadMyAppointments();
         appointmentTable.setItems(appointments);
+        loadMyAppointments();
     }
 
     public void setCurrentPatient(String name) {
         this.currentPatientName = name;
         loadMyAppointments();
+    }
+
+    public void setDoctorNames(List<String> doctorNames) {
+        if (doctorNames == null || doctorNames.isEmpty()) {
+            doctorComboBox.setItems(FXCollections.observableArrayList("No doctors available"));
+            doctorComboBox.setDisable(true);
+        } else {
+            doctorComboBox.setItems(FXCollections.observableArrayList(doctorNames));
+            doctorComboBox.setDisable(false);
+        }
     }
 
     @FXML
@@ -109,33 +114,49 @@ public class PatientDashboardController {
     @FXML
     private void refreshTable() {
         loadMyAppointments();
+        recordsSection.setVisible(false);
+        recordsSection.setManaged(false);
         setStatus("Refreshed.", true);
     }
 
     @FXML
     private void viewAppointments() {
-        refreshTable();
+        loadMyAppointments();
+        recordsSection.setVisible(false);
+        recordsSection.setManaged(false);
         setStatus("Showing your appointments.", true);
     }
 
     @FXML
     private void viewRecords() {
-        loadMyAppointments();
-        setStatus("Showing your records.", true);
+        List<String> records = recordStore.getRecords(currentPatientName);
+        if (records.isEmpty()) {
+            setStatus("No clinical records found.", false);
+            recordsSection.setVisible(false);
+            recordsSection.setManaged(false);
+        } else {
+            recordsListView.setItems(FXCollections.observableArrayList(records));
+            recordsSection.setVisible(true);
+            recordsSection.setManaged(true);
+            setStatus("Showing your clinical records.", true);
+        }
     }
 
     @FXML
     private void logout() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/hospitol/Auth.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/example/hospitol/auth-view.fxml")
+            );
             Scene scene = new Scene(loader.load());
-            Stage stage = (Stage) statusLabel.getScene().getWindow();
+            Stage stage = (Stage) appointmentTable.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Hospital Management System — Login");
             stage.setResizable(false);
             stage.centerOnScreen();
         } catch (IOException e) {
             e.printStackTrace();
+            setStatus("Logout failed: " + e.getMessage(), false);
         }
     }
 

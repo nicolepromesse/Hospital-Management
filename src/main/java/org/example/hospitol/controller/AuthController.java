@@ -17,13 +17,11 @@ import java.util.regex.*;
 
 public class AuthController implements Initializable {
 
-    // ── Login card ─────────────────────────────────────────────────────────────
     @FXML private VBox loginCard;
     @FXML private TextField loginUsername;
     @FXML private PasswordField loginPassword;
     @FXML private Label loginError;
 
-    // ── Signup card ────────────────────────────────────────────────────────────
     @FXML private VBox signupCard;
     @FXML private TextField signupEmail;
     @FXML private TextField signupUsername;
@@ -32,24 +30,18 @@ public class AuthController implements Initializable {
     @FXML private Label signupError;
     @FXML private Label signupSuccess;
 
-    // ── Patterns ───────────────────────────────────────────────────────────────
     private static final Pattern HAS_LETTER  = Pattern.compile("[a-zA-Z]");
     private static final Pattern HAS_NUMBER  = Pattern.compile("[0-9]");
     private static final Pattern HAS_SPECIAL = Pattern.compile("[^a-zA-Z0-9]");
 
-    // ── File storage ───────────────────────────────────────────────────────────
     private static final String USERS_FILE = "users.txt";
     private final Map<String, String[]> users = new HashMap<>();
-    // users map: username -> [password, role, email]
 
-    // ══════════════════════════════════════════════════════════════════════════
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         signupRole.getItems().addAll("Patient", "Doctor");
-
         loadUsersFromFile();
 
-        // Seed default accounts
         if (!users.containsKey("doctor")) {
             users.put("doctor", new String[]{"Doctor@123", "Doctor", "doctor@hospital.com"});
             saveUsersToFile();
@@ -60,9 +52,6 @@ public class AuthController implements Initializable {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  LOGIN → navigate to correct dashboard
-    // ══════════════════════════════════════════════════════════════════════════
     @FXML
     private void handleLogin() {
         String username = loginUsername.getText().trim();
@@ -84,8 +73,7 @@ public class AuthController implements Initializable {
             return;
         }
 
-        // ── Navigate to the correct dashboard ─────────────────────────────────
-        String role = data[1]; // "Doctor" or "Patient"
+        String role = data[1];
         try {
             String fxml = role.equals("Doctor")
                     ? "/org/example/hospitol/DoctorDashboard.fxml"
@@ -94,10 +82,11 @@ public class AuthController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Scene scene = new Scene(loader.load());
 
-            // Pass username to patient dashboard so it filters appointments
             if (role.equals("Patient")) {
+                List<String> doctorNames = getDoctorNamesFromUsers();
                 PatientDashboardController ctrl = loader.getController();
                 ctrl.setCurrentPatient(username);
+                ctrl.setDoctorNames(doctorNames);
             }
 
             Stage stage = (Stage) loginUsername.getScene().getWindow();
@@ -112,9 +101,16 @@ public class AuthController implements Initializable {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  SIGNUP
-    // ══════════════════════════════════════════════════════════════════════════
+    private List<String> getDoctorNamesFromUsers() {
+        List<String> doctors = new ArrayList<>();
+        for (Map.Entry<String, String[]> entry : users.entrySet()) {
+            if ("Doctor".equalsIgnoreCase(entry.getValue()[1])) {
+                doctors.add(entry.getKey());
+            }
+        }
+        return doctors;
+    }
+
     @FXML
     private void handleSignup() {
         String email    = signupEmail.getText().trim();
@@ -125,19 +121,14 @@ public class AuthController implements Initializable {
         signupError.setText("");
         signupSuccess.setText("");
 
-        // Required fields
         if (email.isEmpty() || username.isEmpty() || password.isEmpty() || role == null) {
             shake(signupError, "Please fill in all fields.");
             return;
         }
-
-        // Email must be valid
         if (!email.contains("@") || !email.contains(".")) {
             shake(signupError, "Email must be valid (e.g. name@mail.com).");
             return;
         }
-
-        // Password strength
         if (!HAS_LETTER.matcher(password).find()) {
             shake(signupError, "Password must contain at least one letter.");
             return;
@@ -154,18 +145,14 @@ public class AuthController implements Initializable {
             shake(signupError, "Password must be at least 6 characters.");
             return;
         }
-
-        // Username uniqueness
         if (users.containsKey(username)) {
             shake(signupError, "Username already taken. Choose another.");
             return;
         }
 
-        // Save
         users.put(username, new String[]{password, role, email});
         saveUsersToFile();
 
-        // Success → auto-switch to login after 1.5s with username pre-filled
         signupSuccess.setText("Account created! Redirecting to sign in…");
         signupSuccess.setStyle("-fx-text-fill: #38a169; -fx-font-weight: bold;");
 
@@ -173,14 +160,11 @@ public class AuthController implements Initializable {
         pause.setOnFinished(e -> {
             clearSignupFields();
             showLogin();
-            loginUsername.setText(username); // pre-fill for convenience
+            loginUsername.setText(username);
         });
         pause.play();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  NAVIGATION
-    // ══════════════════════════════════════════════════════════════════════════
     @FXML
     private void showSignup() {
         loginCard.setVisible(false);
@@ -200,9 +184,6 @@ public class AuthController implements Initializable {
         signupSuccess.setText("");
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  FILE PERSISTENCE
-    // ══════════════════════════════════════════════════════════════════════════
     private void loadUsersFromFile() {
         File file = new File(USERS_FILE);
         if (!file.exists()) return;
@@ -230,9 +211,6 @@ public class AuthController implements Initializable {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    //  ANIMATION
-    // ══════════════════════════════════════════════════════════════════════════
     private void shake(Label label, String message) {
         label.setText(message);
         label.setStyle("-fx-text-fill: #e53e3e; -fx-font-size: 12px;");
