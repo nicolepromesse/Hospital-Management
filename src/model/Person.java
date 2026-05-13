@@ -1,7 +1,7 @@
 public abstract class Person {
 
-    protected String name;
-    protected String password;
+    private String name;
+    private String password;
 
     public Person(String name, String password) {
         this.name = name;

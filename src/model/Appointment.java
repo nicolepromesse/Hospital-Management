@@ -3,7 +3,6 @@ import java.time.format.DateTimeFormatter;
 
 public class Appointment {
 
-    private static int counter = 1000;
     private int id;
 
     private Doctor doctor;
@@ -11,8 +10,9 @@ public class Appointment {
     private LocalDateTime date;
     private String status;
 
-    public Appointment(Doctor doctor, Patient patient, LocalDateTime date, String status) {
-        this.id = counter++;
+    public Appointment(Doctor doctor, Patient patient,
+                       LocalDateTime date, String status) {
+
         this.doctor = doctor;
         this.patient = patient;
         this.date = date;
@@ -45,25 +45,17 @@ public class Appointment {
 
     public void showInfo() {
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 
         System.out.println("\n        APPOINTMENT RECEIPT");
         System.out.println("========================================");
 
-        System.out.println("ID: " + id);
         System.out.println("Patient: " + patient.getName());
         System.out.println("Doctor: " + doctor.getName());
         System.out.println("Specialization: " + doctor.getSpecialization());
         System.out.println("Date: " + date.format(formatter));
-
-        if (status == null || status.trim().isEmpty()) {
-            System.out.println("Status: UNKNOWN");
-        } else if (status.equalsIgnoreCase("PENDING") ||
-                   status.equalsIgnoreCase("CANCELLED")) {
-            System.out.println("Status: " + status + " (NOT CONFIRMED)");
-        } else {
-            System.out.println("Status: " + status);
-        }
+        System.out.println("Status: " + status);
 
         System.out.println("========================================\n");
     }

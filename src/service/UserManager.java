@@ -1,3 +1,5 @@
+
+import java.sql.*;
 import java.util.*;
 
 public class UserManager {
@@ -5,35 +7,99 @@ public class UserManager {
     private List<Patient> patients = new ArrayList<>();
     private List<Doctor> doctors = new ArrayList<>();
 
-    public void registerPatient(Patient p) {
-        patients.add(p);
-        savePatients();
-        System.out.println("Patient registered successfully!");
+    public void registerPatient(Patient patient) {
+
+        patients.add(patient);
+
+        String sql =
+                "INSERT INTO patients(name,password) VALUES(?,?)";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, patient.getName());
+            stmt.setString(2, patient.getPassword());
+
+            stmt.executeUpdate();
+
+            System.out.println("Patient registered successfully!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public void registerDoctor(Doctor d) {
-        doctors.add(d);
-        saveDoctors();
-        System.out.println("Doctor registered successfully!");
+    public void registerDoctor(Doctor doctor) {
+
+        doctors.add(doctor);
+
+        String sql =
+                "INSERT INTO doctors(name,password,specialization) VALUES(?,?,?)";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, doctor.getName());
+            stmt.setString(2, doctor.getPassword());
+            stmt.setString(3, doctor.getSpecialization());
+
+            stmt.executeUpdate();
+
+            System.out.println("Doctor registered successfully!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Patient loginPatient(String name, String password) {
-        for (Patient p : patients) {
-            if (p.getName().equals(name) &&
-                p.getPassword().equals(password)) {
-                return p;
+
+        String sql =
+                "SELECT * FROM patients WHERE name=? AND password=?";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+            stmt.setString(2, password);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new Patient(name, password, new HashSet<>());
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         return null;
     }
 
     public Doctor loginDoctor(String name, String password) {
-        for (Doctor d : doctors) {
-            if (d.getName().equals(name) &&
-                d.getPassword().equals(password)) {
-                return d;
+
+        String sql =
+                "SELECT * FROM doctors WHERE name=? AND password=?";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+            stmt.setString(2, password);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+
+                String specialization = rs.getString("specialization");
+
+                return new Doctor(name, password, specialization);
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         return null;
     }
 
@@ -41,35 +107,50 @@ public class UserManager {
         return doctors;
     }
 
-    public void saveDoctors() {
-        List<String> lines = new ArrayList<>();
-        for (Doctor d : doctors) {
-            lines.add(d.getName() + "," + d.getPassword() + "," + d.getSpecialization());
-        }
-        FileUtil.writeLines("doctors.txt", lines);
-    }
-
-    public void savePatients() {
-        List<String> lines = new ArrayList<>();
-        for (Patient p : patients) {
-            lines.add(p.getName() + "," + p.getPassword());
-        }
-        FileUtil.writeLines("patients.txt", lines);
-    }
-
     public void loadDoctors() {
-        List<String> lines = FileUtil.readLines("doctors.txt");
-        for (String line : lines) {
-            String[] parts = line.split(",");
-            doctors.add(new Doctor(parts[0], parts[1], parts[2]));
+
+        doctors.clear();
+
+        String sql = "SELECT * FROM doctors";
+
+        try (Connection conn = DBConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+
+                String name = rs.getString("name");
+                String password = rs.getString("password");
+                String specialization = rs.getString("specialization");
+
+                doctors.add(new Doctor(name, password, specialization));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     public void loadPatients() {
-        List<String> lines = FileUtil.readLines("patients.txt");
-        for (String line : lines) {
-            String[] parts = line.split(",");
-            patients.add(new Patient(parts[0], parts[1], new HashSet<>()));
+
+        patients.clear();
+
+        String sql = "SELECT * FROM patients";
+
+        try (Connection conn = DBConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+
+                String name = rs.getString("name");
+                String password = rs.getString("password");
+
+                patients.add(new Patient(name, password, new HashSet<>()));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

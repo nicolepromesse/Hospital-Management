@@ -1,3 +1,4 @@
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -6,34 +7,62 @@ public class AppointmentManager {
     private List<Appointment> appointments = new ArrayList<>();
 
     public void addAppointment(Appointment a) {
+
         appointments.add(a);
-        saveAppointments();
+
+        String sql =
+                "INSERT INTO appointments(doctor_name, patient_name, appointment_date, status) VALUES(?,?,?,?)";
+
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, a.getDoctor().getName());
+            stmt.setString(2, a.getPatient().getName());
+            stmt.setTimestamp(3, Timestamp.valueOf(a.getDate()));
+            stmt.setString(4, a.getStatus());
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public boolean isDoctorAvailable(Doctor doctor, LocalDateTime newDate) {
+    public boolean isDoctorAvailable(Doctor doctor,
+                                     LocalDateTime newDate) {
+
         for (Appointment a : appointments) {
+
             if (a.getDoctor().getName().equals(doctor.getName())) {
+
                 LocalDateTime existing = a.getDate();
                 LocalDateTime end = existing.plusMinutes(90);
-                if (!newDate.isAfter(end) && !newDate.isBefore(existing)) {
+
+                if (!newDate.isAfter(end)
+                        && !newDate.isBefore(existing)) {
                     return false;
                 }
             }
         }
+
         return true;
     }
 
     public void showAllAppointments() {
+
         if (appointments.isEmpty()) {
             System.out.println("No appointments available.");
             return;
         }
+
         for (Appointment a : appointments) {
             a.showInfo();
         }
     }
 
-    public void cancelAppointment(String name, String password, UserManager userManager) {
+    public void cancelAppointment(String name,
+                                  String password,
+                                  UserManager userManager) {
 
         Patient p = userManager.loginPatient(name, password);
 
@@ -42,71 +71,71 @@ public class AppointmentManager {
             return;
         }
 
-        boolean found = false;
+        String sql =
+                "UPDATE appointments SET status='CANCELLED' WHERE patient_name=?";
 
-        for (Appointment a : appointments) {
-            if (a.getPatient().getName().equals(name)) {
-                a.setStatus("CANCELLED");
-                found = true;
+        try (Connection conn = DBConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+
+            int rows = stmt.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("Appointment cancelled successfully.");
+            } else {
+                System.out.println("No appointment found.");
             }
-        }
 
-        if (!found) {
-            System.out.println("No appointment found.");
-            return;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        saveAppointments();
-        System.out.println("Appointment cancelled successfully.");
-    }
-
-    public void saveAppointments() {
-        List<String> lines = new ArrayList<>();
-        for (Appointment a : appointments) {
-            lines.add(
-                a.getId() + "," +
-                a.getDoctor().getName() + "," +
-                a.getPatient().getName() + "," +
-                a.getDate().toString() + "," +
-                a.getStatus()
-            );
-        }
-        FileUtil.writeLines("appointments.txt", lines);
     }
 
     public void loadAppointments(UserManager userManager) {
 
-        List<String> lines = FileUtil.readLines("appointments.txt");
+        appointments.clear();
 
-        for (String line : lines) {
+        String sql = "SELECT * FROM appointments";
 
-            String[] p = line.split(",");
+        try (Connection conn = DBConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
-            String doctorName = p[1];
-            String patientName = p[2];
+            while (rs.next()) {
 
-            Doctor doctor = null;
-            Patient patient = null;
+                String doctorName = rs.getString("doctor_name");
+                String patientName = rs.getString("patient_name");
+                LocalDateTime date =
+                        rs.getTimestamp("appointment_date")
+                                .toLocalDateTime();
+                String status = rs.getString("status");
 
-            for (Doctor d : userManager.getDoctors()) {
-                if (d.getName().equals(doctorName)) doctor = d;
-            }
+                Doctor doctor = null;
+                Patient patient = null;
 
-            for (String pl : FileUtil.readLines("patients.txt")) {
-                String[] data = pl.split(",");
-                if (data[0].equals(patientName)) {
-                    patient = new Patient(data[0], data[1], new HashSet<>());
+                for (Doctor d : userManager.getDoctors()) {
+                    if (d.getName().equals(doctorName)) {
+                        doctor = d;
+                    }
+                }
+
+                patient = new Patient(patientName,
+                        "",
+                        new HashSet<>());
+
+                if (doctor != null) {
+                    appointments.add(new Appointment(
+                            doctor,
+                            patient,
+                            date,
+                            status
+                    ));
                 }
             }
 
-            if (doctor != null && patient != null) {
-                appointments.add(new Appointment(
-                        doctor,
-                        patient,
-                        LocalDateTime.parse(p[3]),
-                        p[4]
-                ));
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
